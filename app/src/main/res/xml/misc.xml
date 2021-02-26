@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory
+        android:title="@string/active_display"
+        app:iconSpaceReserved="false">
+        <Preference
+            android:key="enableListener"
+            android:title="@string/notification_listener_switch_title"
+            app:iconSpaceReserved="false">
+            <intent android:action="android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS" />
+        </Preference>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/speed_indicator"
+        app:iconSpaceReserved="false">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="enableIndicator"
+            android:summary="@string/indicator_switch_summary"
+            android:title="@string/indicator_switch_title"
+            app:iconSpaceReserved="false" />
+        <SeekBarPreference
+            android:defaultValue="2"
+            android:key="updateFrequency"
+            android:max="10"
+            android:title="@string/frequency"
+            app:dependency="enableIndicator"
+            app:iconSpaceReserved="false"
+            app:min="1"
+            app:showSeekBarValue="true" />
+    </PreferenceCategory>
+</PreferenceScreen>

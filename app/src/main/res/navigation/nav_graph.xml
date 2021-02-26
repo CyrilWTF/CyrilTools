@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@id/fragment_main">
+    <fragment
+        android:id="@+id/fragment_main"
+        android:name="me.cyril.cyriltools.ui.MainFragment"
+        android:label="@string/app_name"
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_fragment_app_list"
+            app:destination="@id/fragment_app_list"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim" />
+        <action
+            android:id="@+id/action_fragment_qr_code"
+            app:destination="@id/fragment_qr_code"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim" />
+        <action
+            android:id="@+id/action_fragment_ruler"
+            app:destination="@id/fragment_ruler"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim" />
+        <action
+            android:id="@+id/action_fragment_convert"
+            app:destination="@id/fragment_convert"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim" />
+        <action
+            android:id="@+id/action_fragment_misc"
+            app:destination="@id/fragment_misc"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim" />
+        <action
+            android:id="@+id/action_fragment_level"
+            app:destination="@id/fragment_level"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragment_app_list"
+        android:name="me.cyril.cyriltools.ui.AppListFragment"
+        android:label="@string/label_app_list"
+        tools:layout="@layout/fragment_app_list" />
+    <fragment
+        android:id="@+id/fragment_qr_code"
+        android:name="me.cyril.cyriltools.ui.QRCodeFragment"
+        android:label="@string/label_qrcode"
+        tools:layout="@layout/fragment_qrcode" />
+    <fragment
+        android:id="@+id/fragment_ruler"
+        android:name="me.cyril.cyriltools.ui.RulerFragment"
+        android:label="@string/label_ruler"
+        tools:layout="@layout/fragment_ruler" />
+    <fragment
+        android:id="@+id/fragment_convert"
+        android:name="me.cyril.cyriltools.ui.ConvertFragment"
+        android:label="@string/label_convert"
+        tools:layout="@layout/fragment_convert" />
+    <fragment
+        android:id="@+id/fragment_misc"
+        android:name="me.cyril.cyriltools.ui.MiscFragment"
+        android:label="@string/label_misc" />
+    <fragment
+        android:id="@+id/fragment_level"
+        android:name="me.cyril.cyriltools.ui.LevelFragment"
+        android:label="@string/label_level"
+        tools:layout="@layout/fragment_level" />
+</navigation>

@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Cyril Tools</string>
+    <string name="label_app_list">APK Extractor</string>
+    <string name="label_convert">Text converter</string>
+    <string name="label_level">Level</string>
+    <string name="label_misc">Miscellaneous</string>
+    <string name="label_qrcode">QR Code</string>
+    <string name="label_ruler">Ruler</string>
+    <string name="active_display">Active Display</string>
+    <string name="notification_listener_switch_title">Enable active display</string>
+    <string name="speed_indicator">Speed Indicator</string>
+    <string name="indicator_switch_summary">Show indicator in status bar</string>
+    <string name="indicator_switch_title">Enable indicator</string>
+    <string name="frequency">Update frequency</string>
+    <string name="list_system_apps">System apps</string>
+    <string name="menu_select_all">Select all</string>
+    <string name="menu_commit">Commit</string>
+    <string name="menu_save_image">save</string>
+    <string name="menu_reset">reset</string>
+    <string name="button_encode">encode</string>
+    <string name="button_convert">convert</string>
+    <string name="button_clear">clear</string>
+    <string name="hint_content">Enter</string>
+    <string name="hint_normal">Enter normal text</string>
+    <string name="hint_special">Enter complex text</string>
+    <string-array name="convert_options">
+        <item>UTF-16</item>
+        <item>UTF-8</item>
+        <item>Unicode</item>
+        <item>Base64</item>
+        <item>Morse</item>
+        <item>Url</item>
+    </string-array>
+</resources>
