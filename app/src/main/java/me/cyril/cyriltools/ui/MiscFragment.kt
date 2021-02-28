@@ -8,8 +8,6 @@ import android.provider.Settings
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
-import me.cyril.cyriltools.INDICATOR_SWITCH_KEY
-import me.cyril.cyriltools.NOTIFICATION_LISTENER_SWITCH_KEY
 import me.cyril.cyriltools.R
 import me.cyril.cyriltools.component.SpeedIndicatorService
 
@@ -33,7 +31,7 @@ class MiscFragment : PreferenceFragmentCompat() {
 
     override fun onResume() {
         super.onResume()
-        findPreference<Preference>(NOTIFICATION_LISTENER_SWITCH_KEY)?.summary =
+        findPreference<Preference>(getString(R.string.notification_listener_key))?.summary =
             if (isNotificationListenerEnabled()) "Enabled" else "Disabled"
     }
 
@@ -44,7 +42,7 @@ class MiscFragment : PreferenceFragmentCompat() {
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
         when (preference?.key) {
-            INDICATOR_SWITCH_KEY -> {
+            getString(R.string.notification_key) -> {
                 if ((preference as SwitchPreference).isChecked) {
                     mActivity?.startForegroundService(
                         Intent(

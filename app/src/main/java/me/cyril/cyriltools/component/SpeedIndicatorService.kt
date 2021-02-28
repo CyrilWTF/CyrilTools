@@ -15,8 +15,11 @@ import me.cyril.cyriltools.ui.MainActivity
 class SpeedIndicatorService : Service() {
 
     private val mListener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
-        if (key == UPDATE_FREQUENCY_KEY) {
-            frequency = sp.getInt(key, 2)
+        when (key) {
+            getString(R.string.network_indicator_key) -> mSource[0] =
+                if (sp.getBoolean(key, false)) NetSpeedMonitor() else null
+            getString(R.string.network_indicator_update_interval_key) -> frequency =
+                sp.getInt(key, 2)
         }
     }
 
@@ -25,7 +28,9 @@ class SpeedIndicatorService : Service() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 Intent.ACTION_SCREEN_OFF -> {
-                    mConnectivityManager.unregisterNetworkCallback(mNetworkCallback)
+                    for (s in mSource) {
+                        s?.free()
+                    }
                     stop()
                 }
                 Intent.ACTION_USER_PRESENT -> {
@@ -34,43 +39,6 @@ class SpeedIndicatorService : Service() {
             }
         }
 
-    }
-
-    private val mConnectivityManager by lazy { getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
-    private val mNetworkCallback = object : ConnectivityManager.NetworkCallback() {
-
-        override fun onAvailable(network: Network) {
-            mNetworkMap[network] = mConnectivityManager.getLinkProperties(network)
-            if (!isNotifying) {
-                mHandler?.post(mRunnable)
-                isNotifying = true
-            }
-        }
-
-        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
-            if (mNetworkMap.containsKey(network)) {
-                mNetworkMap[network] = linkProperties
-            }
-        }
-
-        override fun onLost(network: Network) {
-            mNetworkMap.remove(network)
-            if (mNetworkMap.isEmpty()) {
-                stop()
-                mNotificationManager.notify(
-                    NOTIFICATION_ID,
-                    mBuilder.setSmallIcon(R.drawable.ic_doze).setContentText("No network available")
-                        .build()
-                )
-            }
-        }
-
-    }
-    private val units = arrayOf("B", "KB", "MB")
-    private val mNetworkMap = HashMap<Network, LinkProperties?>()
-    private val mRequest by lazy {
-        NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN).build()
     }
 
     private val mNotificationManager by lazy { getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
@@ -84,10 +52,13 @@ class SpeedIndicatorService : Service() {
     private val mHandler = Looper.myLooper()?.let { Handler(it) }
     private val mRunnable = object : Runnable {
         override fun run() {
-            update()
+            for (s in mSource) {
+                s?.update()
+            }
             mNotificationManager.notify(
                 NOTIFICATION_ID,
-                mBuilder.setContentText(speed).build()
+                mBuilder.setContentText(mSource[0]?.text)
+                    .setSmallIcon(Icon.createWithBitmap(mSource[0]?.icon)).build()
             )
             mHandler?.postDelayed(this, 1000L * frequency)
         }
@@ -101,27 +72,17 @@ class SpeedIndicatorService : Service() {
         textAlign = Paint.Align.CENTER
         typeface = Typeface.DEFAULT_BOLD
     }
-    private val mIcon by lazy { Bitmap.createBitmap(96, 96, Bitmap.Config.ALPHA_8) }
-    private val mCanvas by lazy { Canvas(mIcon) }
 
-    private var speed = ""
+    private val mSource = arrayOfNulls<NotificationSource>(1)
+
     private var frequency = 2
     private var isNotifying = false
-
-    private var lastRx = 0L
-    private var lastTx = 0L
-    private var lastTime = 0L
-
-    private lateinit var speedRx: String
-    private lateinit var speedTx: String
-    private lateinit var unitRx: String
-    private lateinit var unitTx: String
 
     override fun onCreate() {
         super.onCreate()
 
         with(PreferenceManager.getDefaultSharedPreferences(this)) {
-            frequency = getInt(UPDATE_FREQUENCY_KEY, 2)
+            frequency = getInt(getString(R.string.network_indicator_update_interval_key), 2)
             registerOnSharedPreferenceChangeListener(mListener)
         }
 
@@ -158,8 +119,11 @@ class SpeedIndicatorService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        for (s in mSource) {
+            s?.free()
+        }
         stop()
-        mConnectivityManager.unregisterNetworkCallback(mNetworkCallback)
         unregisterReceiver(mReceiver)
         PreferenceManager.getDefaultSharedPreferences(this)
             .unregisterOnSharedPreferenceChangeListener(mListener)
@@ -171,68 +135,135 @@ class SpeedIndicatorService : Service() {
     }
 
     private fun resume() {
-        mConnectivityManager.registerNetworkCallback(mRequest, mNetworkCallback)
-        lastRx = 0L
-        lastTx = 0L
-        lastTime = System.currentTimeMillis()
+        for (s in mSource) {
+            s?.init()
+        }
     }
 
-    private fun update() {
-        var nowRx = 0L
-        var nowTx = 0L
-        val nowTime = System.currentTimeMillis()
-        val interval = nowTime - lastTime
+    private inner class NetSpeedMonitor : NotificationSource {
 
-        for (lp in mNetworkMap.values) {
-            lp?.interfaceName?.let {
-                nowRx += Reflector.GetRxBytes(it)
-                nowTx += Reflector.GetTxBytes(it)
-            }
-        }
+        private val mConnectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        private val mNetworkCallback = object : ConnectivityManager.NetworkCallback() {
 
-        generate((nowRx - lastRx) * 1000f / interval, 'r')
-        generate((nowTx - lastTx) * 1000f / interval, 't')
-
-        speed = "$speedTx $unitTx ↑ | $speedRx $unitRx ↓"
-        with(mCanvas) {
-            drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-            drawText(speedTx + unitTx[0], 48f, 36f, mPaint)
-            drawText(speedRx + unitRx[0], 48f, 84f, mPaint)
-        }
-        mBuilder.setSmallIcon(Icon.createWithBitmap(mIcon))
-
-        lastRx = nowRx
-        lastTx = nowTx
-        lastTime = nowTime
-    }
-
-    private fun generate(speed: Float, type: Char) {
-        var unit = "GB"
-        var formatted = ""
-        var sp = speed
-        for (i in 0 until 3) {
-            if (sp < 1000) {
-                formatted = if (sp < 100 && i != 0) {
-                    String.format("%.1f", sp)
-                } else {
-                    String.format("%.0f", sp)
+            override fun onAvailable(network: Network) {
+                mNetworkMap[network] = mConnectivityManager.getLinkProperties(network)
+                if (!isNotifying) {
+                    mHandler?.post(mRunnable)
+                    isNotifying = true
                 }
-                unit = units[i]
-                break
             }
-            sp /= 1000
+
+            override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+                if (mNetworkMap.containsKey(network)) {
+                    mNetworkMap[network] = linkProperties
+                }
+            }
+
+            override fun onLost(network: Network) {
+                mNetworkMap.remove(network)
+                if (mNetworkMap.isEmpty()) {
+                    stop()
+                    mNotificationManager.notify(
+                        NOTIFICATION_ID,
+                        mBuilder.setSmallIcon(R.drawable.ic_doze)
+                            .setContentText("No network available")
+                            .build()
+                    )
+                }
+            }
+
+        }
+        private val units = arrayOf("KB", "MB", "GB")
+        private val mNetworkMap = HashMap<Network, LinkProperties?>()
+        private val mRequest =
+            NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN).build()
+
+        private var lastRx = 0L
+        private var lastTx = 0L
+        private var lastTime = System.currentTimeMillis()
+
+        override var title = ""
+        override var text = ""
+
+        override fun init() {
+            mConnectivityManager.registerNetworkCallback(mRequest, mNetworkCallback)
+
+            lastRx = 0L
+            lastTx = 0L
+            for (lp in mNetworkMap.values) {
+                lp?.interfaceName?.let {
+                    lastRx += Reflector.GetRxBytes(it)
+                    lastTx += Reflector.GetTxBytes(it)
+                }
+            }
         }
 
-        when (type) {
-            'r' -> {
-                speedRx = formatted
-                unitRx = unit
+        override fun update() {
+            var nowRx = 0L
+            var nowTx = 0L
+
+            for (lp in mNetworkMap.values) {
+                lp?.interfaceName?.let {
+                    nowRx += Reflector.GetRxBytes(it)
+                    nowTx += Reflector.GetTxBytes(it)
+                }
             }
-            't' -> {
-                speedTx = formatted
-                unitTx = unit
+
+            val nowTime = System.currentTimeMillis()
+            val interval = nowTime - lastTime
+            lastTime = nowTime
+
+            val speedRx = generate((nowRx - lastRx) * 1000 / interval)
+            val speedTx = generate((nowTx - lastTx) * 1000 / interval)
+
+            lastRx = nowRx
+            lastTx = nowTx
+
+            text = "${speedRx.first} ${speedRx.second} ↓ | ${speedTx.first} ${speedTx.second} ↑"
+
+            with(canvas) {
+                drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+                drawText(speedTx.first + speedTx.second[0], 48f, 36f, mPaint)
+                drawText(speedRx.first + speedRx.second[0], 48f, 84f, mPaint)
             }
         }
+
+        override fun free() = mConnectivityManager.unregisterNetworkCallback(mNetworkCallback)
+
+        private fun generate(speed: Long): Pair<String, String> {
+            if (speed < 1000) {
+                return Pair(speed.toString(), "B")
+            }
+
+            var speedF = speed / 1024f
+            for (i in 0 until 3) {
+                if (speedF < 1000) {
+                    return Pair(String.format("%4f", speedF), units[i])
+                }
+                speedF /= 1024f
+            }
+
+            return Pair("N/A", " ")
+        }
+
+    }
+
+    private interface NotificationSource {
+
+        val icon: Bitmap
+            get() = Bitmap.createBitmap(96, 96, Bitmap.Config.ALPHA_8)
+        val canvas: Canvas
+            get() = Canvas(icon)
+
+        var title: String
+        var text: String
+
+        fun init()
+        fun update()
+        fun free()
+
     }
 
 }

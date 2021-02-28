@@ -5,27 +5,33 @@
         android:title="@string/active_display"
         app:iconSpaceReserved="false">
         <Preference
-            android:key="enableListener"
+            android:key="@string/notification_listener_key"
             android:title="@string/notification_listener_switch_title"
             app:iconSpaceReserved="false">
             <intent android:action="android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS" />
         </Preference>
     </PreferenceCategory>
     <PreferenceCategory
-        android:title="@string/speed_indicator"
+        android:title="@string/notification_manager"
         app:iconSpaceReserved="false">
         <SwitchPreference
             android:defaultValue="false"
-            android:key="enableIndicator"
-            android:summary="@string/indicator_switch_summary"
-            android:title="@string/indicator_switch_title"
+            android:key="@string/notification_key"
+            android:title="@string/notification_switch_title"
+            app:iconSpaceReserved="false" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/network_indicator_key"
+            android:summary="@string/network_indicator_switch_summary"
+            android:title="@string/network_indicator_switch_title"
+            android:dependency="@string/notification_key"
             app:iconSpaceReserved="false" />
         <SeekBarPreference
             android:defaultValue="2"
-            android:key="updateFrequency"
+            android:key="@string/network_indicator_update_interval_key"
             android:max="10"
-            android:title="@string/frequency"
-            app:dependency="enableIndicator"
+            android:title="@string/network_indicator_update_interval_title"
+            app:dependency="@string/network_indicator_key"
             app:iconSpaceReserved="false"
             app:min="1"
             app:showSeekBarValue="true" />

@@ -5,6 +5,7 @@ import android.net.TrafficStats;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+@SuppressWarnings({"ConstantConditions", "JavaReflectionMemberAccess"})
 public class Reflector {
     public static long GetRxBytes(String iface) {
         try {
